@@ -25,5 +25,4 @@ iface enp1s0 inet dhcp
         # by referencing it with a number.
 	#
 	post-up ip rule add from 192.168.0.50 lookup 100
-	post-up ip rule add from 192.168.0.51 lookup 100
 	post-up ip route add default dev enp1s0 table 100
