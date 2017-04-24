@@ -4,7 +4,7 @@
 # to match your actual hardware!
 WAN=enp1s0
 LAN=enp2s0
-VPN=tun0
+VPNOUT=tun0
 
 # neat trick - allow us to do variable substitutions in here,
 # but still use iptables-restore, which doesn't natively
@@ -23,7 +23,7 @@ VPN=tun0
 # allow traffic to be NATted across an outbound VPN...
 # useful to move your transmission endpoint outside your
 # ISP's grasp
--A POSTROUTING -o $VPN -j MASQUERADE
+-A POSTROUTING -o $VPNOUT -j MASQUERADE
 
 # sample NAT pinhole: forward HTTPS to a machine on the LAN
 #-A PREROUTING -p tcp -m tcp -i $WAN --dport 443 -j DNAT --to-destination 192.168.0.50:443
@@ -78,9 +78,8 @@ COMMIT
 # forward from LAN to WAN
 -A FORWARD -i $LAN -o $WAN -j ACCEPT
 
-# forward from LAN to VPN and vice versa
--A FORWARD -i $LAN -o $VPN -j ACCEPT
--A FORWARD -i $VPN -o $LAN -j ACCEPT
+# forward from LAN to (outbound) VPN
+-A FORWARD -i $LAN -o $VPNOUT -j ACCEPT
 
 # sample rule: allow traffic from our NAT pinhole(s)
 #-A FORWARD -p tcp -d 192.168.0.50 --dport 443 -j ACCEPT
