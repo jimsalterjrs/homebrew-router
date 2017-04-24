@@ -1,0 +1,93 @@
+#!/bin/sh
+
+# change WAN and LAN interface names
+# to match your actual hardware!
+WAN=enp1s0
+LAN=enp2s0
+VPN=tun0
+
+# neat trick - allow us to do variable substitutions in here,
+# but still use iptables-restore, which doesn't natively
+# handle variables
+/sbin/iptables-restore << EOF
+
+*nat
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+
+# allow traffic to be NATted across the WAN
+-A POSTROUTING -o $WAN -j MASQUERADE
+
+# allow traffic to be NATted across an outbound VPN...
+# useful to move your transmission endpoint outside your
+# ISP's grasp
+-A POSTROUTING -o $VPN -j MASQUERADE
+
+# sample NAT pinhole: forward HTTPS to a machine on the LAN
+#-A PREROUTING -p tcp -m tcp -i $WAN --dport 443 -j DNAT --to-destination 192.168.0.50:443
+
+COMMIT
+
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+# Service rules
+
+# basic global accept rules - ICMP, loopback, traceroute, established all accepted
+-A INPUT -s 127.0.0.0/8 -d 127.0.0.0/8 -i lo -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -m state --state ESTABLISHED -j ACCEPT
+
+# enable traceroute rejections to get sent out
+-A INPUT -p udp -m udp --dport 33434:33523 -j REJECT --reject-with icmp-port-unreachable
+
+# DNS - accept from LAN
+-A INPUT -i $LAN -p tcp --dport 53 -j ACCEPT
+-A INPUT -i $LAN -p udp --dport 53 -j ACCEPT
+
+# SSH - accept from LAN
+-A INPUT -i $LAN -p tcp --dport 22 -j ACCEPT
+
+# sample ssh rules - accept SSH from WAN, but drop any IP that 
+# tries more than 10 connections per minute from WAN
+#-A INPUT -p tcp --dport 22 -i $WAN -m state --state NEW -m recent --set
+#-A INPUT -p tcp --dport 22 -i $WAN -m state --state NEW -m recent  --update --seconds 60 --hitcount 11 -j DROP
+#-A INPUT -p tcp --dport 22 -j ACCEPT
+
+# DHCP client requests - accept from LAN
+-A INPUT -i $LAN -p udp --dport 67:68 -j ACCEPT
+
+# accept netdata HTTP from LAN
+-A INPUT -i $LAN -p tcp --dport 19999 -j ACCEPT
+
+# accept ntopng HTTP from LAN
+-A INPUT -i $LAN -p tcp --dport 3000 -j ACCEPT
+
+# drop all other inbound traffic
+-A INPUT -j DROP
+
+# Forwarding rules
+
+# forward packets along established/related connections
+-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# forward from LAN to WAN
+-A FORWARD -i $LAN -o $WAN -j ACCEPT
+
+# forward from LAN to VPN and vice versa
+-A FORWARD -i $LAN -o $VPN -j ACCEPT
+-A FORWARD -i $VPN -o $LAN -j ACCEPT
+
+# sample rule: allow traffic from our NAT pinhole(s)
+#-A FORWARD -p tcp -d 192.168.0.50 --dport 443 -j ACCEPT
+
+# drop all other forwarded traffic
+-A FORWARD -j DROP
+
+COMMIT
+
+EOF
