@@ -7,6 +7,10 @@ The configs shown here assume an installation of the following packages has alre
 * bind9
 * openvpn
 
+For a VPN endpoint server, you'll also need:
+
+* easy-rsa
+
 Also recommended, for monitoring:
 
 * ntop-ng (available from repositories as ntopng)
