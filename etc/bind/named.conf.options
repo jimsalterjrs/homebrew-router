@@ -1,0 +1,46 @@
+  // create an ACL of networks that are allowed to use your
+  // nameserver recursively (ie, for zones not hosted locally). 
+  // The one shown would allow the server to query
+  // itself, allow machines connected directly to its network
+  // interface to query it, and also allow machines on the private
+  // network 10.8.0.0-10.8.0.255 to query it recursively.
+
+  acl goodclients {
+      10.8.0.0/24;
+      localhost;
+      localnets;
+  };
+
+
+options {
+	directory "/var/cache/bind";
+
+	// If there is a firewall between you and nameservers you want
+	// to talk to, you may need to fix the firewall to allow multiple
+	// ports to talk.  See http://www.kb.cert.org/vuls/id/800113
+
+    // forward DNS requests to Google anycast DNS servers
+    // instead of rudely trying to resolve them directly from
+    // the internet root servers
+    forwarders {
+ 	    8.8.8.8;
+      8.8.4.4;
+    };
+
+    // allow recursive queries from the ACL we created above
+    recursion yes;
+    allow-query { goodclients; };
+
+    dnssec-enable yes;
+    dnssec-validation yes;
+
+
+	//========================================================================
+	// If BIND logs error messages about the root key being expired,
+	// you will need to update your keys.  See https://www.isc.org/bind-keys
+	//========================================================================
+	// dnssec-validation auto;
+
+	auth-nxdomain no;    # conform to RFC1035
+	listen-on-v6 { any; };
+};
