@@ -1,15 +1,19 @@
 #!/bin/sh
 
+# This is a standalone executable firewall script
+# which uses a neat variable substitution trick to
+# invoke iptables-restore, which otherwise does not
+# support variables at all.
+
 # change WAN and LAN interface names
 # to match your actual hardware!
 WAN=enp1s0
 LAN=enp2s0
 VPNOUT=tun0
 
-# neat trick - allow us to do variable substitutions in here,
-# but still use iptables-restore, which doesn't natively
-# handle variables
 /sbin/iptables-restore << EOF
+
+####################################################
 
 *nat
 :PREROUTING ACCEPT [0:0]
