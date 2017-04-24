@@ -1,14 +1,15 @@
-# creating certificates on the server
+# Setting up an OpenVPN server
 
-    cd /etc/openvpn/
+    apt update ; apt install openvpn easy-rsa
     cp -a /usr/share/easy-rsa/* /etc/openvpn/
 
-This gets you the Certificate Authority management tools where you need them.  (If you don't have this directory, apt install easy-rsa.)
+This puts the Certificate Authority management tools (from the easy-rsa package) where you need them.
 
     nano /etc/openvpn/vars
 
 Replace the stuff in vars with appropriate values for your organization. Pay special attention to KEY_SIZE, KEY_EXPIRE, and CA_EXPIRE. The rest are just human-readable fluff.
 
+    cd /etc/openvpn/
     source ./vars
     ./clean-all
 
