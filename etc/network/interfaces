@@ -17,10 +17,13 @@ iface enp2s0 inet static
 # The WAN interface
 auto enp1s0
 iface enp1s0 inet dhcp
-	# Rokus are on .50 and .51 - do not route 
-	# their traffic through VPN. 100 is just a custom
-  # route table that we're implicitly creating here
-  # by referencing it with a number.
+	# Roku on .50 needs its traffic to bypass
+	# the outbound VPN, so that Netflix won't block it.
+        #
+	# we accomplish that by adding its traffic to a 
+        # route table that we're implicitly creating here
+        # by referencing it with a number.
+	#
 	post-up ip rule add from 192.168.0.50 lookup 100
 	post-up ip rule add from 192.168.0.51 lookup 100
 	post-up ip route add default dev enp1s0 table 100
